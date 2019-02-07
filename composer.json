@@ -1,0 +1,16 @@
+{
+    "name": "quardz/cmcapi",
+    "description": "Coinmarketcap.com API PHP Wrap.",
+    "type": "library",
+    "require": {
+        "guzzlehttp/guzzle": "^6.3@dev"
+    },
+    "authors": [
+        {
+            "name": "Adal",
+            "email": "adal@quardz.com"
+        }
+    ],
+    "minimum-stability": "dev"
+
+}
