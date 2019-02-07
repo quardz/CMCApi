@@ -11,6 +11,12 @@
             "email": "adal@quardz.com"
         }
     ],
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "autoload": {
+        "files": ["src/CMCApi.php"],
+        "psr-4": {
+            "CMCApi\\": "src/"
+        }
+    }
 
 }
