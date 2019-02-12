@@ -60,9 +60,11 @@ class CMCApi {
   }
 
   public function getStatus(){
-
+    return $this->_current_status;
   }
-
+  public function getData(){
+    return $this->_current_data;
+  }
   //Dump all secret variables
   public function DumpVars(){
     $_loc = array(
