@@ -25,17 +25,21 @@ class CMCApi {
   private $_request_header;
   private $_last_api_error;
   private $_last_error;
+  private $_current_data;
+  private $_current_status;
+  private $_output_format; //0 = Json string, 1 = PHP Array
   
   //Set the Default Configuration
-  public function DefaultConfig($_secret_key, $_environment = 'SANDBOX') {
+  public function DefaultConfig($_secret_key, $_environment = 'SANDBOX', $_output_format = 1) {
     $this->_environment = $_environment;
     $this->_base_url = $this->_base_urls[$this->_environment];
     $this->_secret_key = $_secret_key;
+    $this->_output_format = $_output_format;
   }
   
-  public function __construct($_secret_key, $_environment = 'SANDBOX') {
+  public function __construct($_secret_key, $_environment = 'SANDBOX', $_output_format) {
     if($_secret_key) {
-      $this->DefaultConfig($_secret_key, $_environment);
+      $this->DefaultConfig($_secret_key, $_environment, $_output_format);
     }
     $_request = array(
       'base_uri' => $this->_base_url,
@@ -53,6 +57,10 @@ class CMCApi {
 
   public function getLastError(){
     return $this->_last_error;
+  }
+
+  public function getStatus(){
+
   }
 
   //Dump all secret variables
@@ -111,12 +119,28 @@ class CMCApi {
     return FALSE;
   }
 
+  // Get the real data from API
   public function BuildRequest($path, $query) {
     try {
       $response = $this->httpClient->request('GET',$path, ['query'=>$query]);
       if($response->getStatusCode() == 200) {
         $body = $response->getBody();
-        return $body->getContents();
+        $result = $body->getContents();
+        if($result) {
+          $json_data = json_decode($result, TRUE);
+          if($json_data && is_array($json_data)) {
+            if(isset($json_data['status'])) {
+              $this->_current_status = $json_data['status'];
+            }
+            if(isset($json_data['data'])) {
+              $this->_current_data = $json_data['data'];
+            }            
+          }
+        }
+        if($this->_output_format) {
+          return $json_data;
+        }
+        return $result;
       }
     } catch (ClientException $e) {
       $response = $e->getResponse();
@@ -290,7 +314,7 @@ class CMCApi {
     return 'not implemeted';
   }
 
-  //All the static functions 
+  //All the static returns 
 
   //Get all the fiat currencies supported by Coinmarketcap. 
   public function getAllFiats() {
