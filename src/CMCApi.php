@@ -29,6 +29,8 @@ class CMCApi {
   private $_current_status;
   private $_output_format; //0 = Json string, 1 = PHP Array
   
+  public $error_code = -1; // Passed or not
+
   //Set the Default Configuration
   public function DefaultConfig($_secret_key, $_environment = 'SANDBOX', $_output_format = 1) {
     $this->_environment = $_environment;
@@ -65,17 +67,9 @@ class CMCApi {
   public function getData(){
     return $this->_current_data;
   }
-  //Dump all secret variables
-  public function DumpVars(){
-    $_loc = array(
-      '_secret_key' => $this->_secret_key,
-      '_environment' => $this->_environment,
-      '_environments' => $this->_environments,
-      '_base_urls' => $this->_base_urls,
-      '_base_url' => $this->_base_url,
-    );
-    return print_R($_loc, TRUE);
-  }
+
+
+
 
   /* All the helper function will be start with _ */
   //Get either Id or Symbol to comma sperated item. Input can be either string or Array
@@ -123,6 +117,7 @@ class CMCApi {
 
   // Get the real data from API
   public function BuildRequest($path, $query) {
+    $json_data = NULL;
     try {
       $response = $this->httpClient->request('GET',$path, ['query'=>$query]);
       if($response->getStatusCode() == 200) {
@@ -133,6 +128,7 @@ class CMCApi {
           if($json_data && is_array($json_data)) {
             if(isset($json_data['status'])) {
               $this->_current_status = $json_data['status'];
+              $this->error_code = $json_data['status']['error_code'];
             }
             if(isset($json_data['data'])) {
               $this->_current_data = $json_data['data'];
@@ -146,8 +142,20 @@ class CMCApi {
       }
     } catch (ClientException $e) {
       $response = $e->getResponse();
-      $this->_last_api_error = $response->getBody()->getContents();
-      return FALSE;
+      $error_result = $response->getBody()->getContents();
+      $this->_last_api_error = 'Unknown Error'; //@todo
+      if($error_result) {
+        $this->_last_api_error = $json_data;
+        $json_data = json_decode($error_result, TRUE);
+        if($json_data && is_array($json_data)) {
+          if(isset($json_data['status'])) {
+            $this->_current_status = $json_data['status'];
+            $this->_last_api_error = $json_data['status'];
+            $this->error_code = $json_data['status']['error_code'];
+          }     
+        }
+      }
+      return $this->_last_api_error;
     }
     return FALSE;
   }
